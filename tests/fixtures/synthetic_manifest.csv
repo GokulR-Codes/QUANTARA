@@ -1,0 +1,7 @@
+video_path,label,participant_id,is_synthetic,note
+tests/fixtures/videos/synthetic_001.mp4,Low,P001,true,SYNTHETIC_DO_NOT_USE_FOR_RESEARCH
+tests/fixtures/videos/synthetic_002.mp4,Moderate,P002,true,SYNTHETIC_DO_NOT_USE_FOR_RESEARCH
+tests/fixtures/videos/synthetic_003.mp4,High,P003,true,SYNTHETIC_DO_NOT_USE_FOR_RESEARCH
+tests/fixtures/videos/synthetic_004.mp4,Low,P001,true,SYNTHETIC_DO_NOT_USE_FOR_RESEARCH
+tests/fixtures/videos/synthetic_005.mp4,Moderate,P004,true,SYNTHETIC_DO_NOT_USE_FOR_RESEARCH
+tests/fixtures/videos/synthetic_006.mp4,High,P005,true,SYNTHETIC_DO_NOT_USE_FOR_RESEARCH

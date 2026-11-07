@@ -1,0 +1,14 @@
+# Dataset manifest template — CSV format
+# Columns: video_path,label,participant_id,session_id,screen_time_hours_per_day,age_years,notes
+#
+# label: 0=Low, 1=Moderate, 2=High (behavioural risk, operator-assigned, not automated)
+# screen_time_hours_per_day: separately measured, not inferred from video
+# participant_id: anonymous identifier, no real names
+#
+# IMPORTANT: Labels must be assigned by qualified researchers following documented protocol.
+# This is an experimental research system — labels are not clinical diagnoses.
+#
+video_path,label,participant_id,session_id,screen_time_hours_per_day,age_years,notes
+data/raw/participant_001/session_001.mp4,0,P001,S001,2.5,8.0,
+data/raw/participant_002/session_001.mp4,1,P002,S001,5.0,9.0,
+data/raw/participant_003/session_001.mp4,2,P003,S001,8.0,7.0,

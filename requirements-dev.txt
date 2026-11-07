@@ -1,0 +1,6 @@
+-r requirements.txt
+ipython==8.28.0
+jupyter==1.1.1
+black==24.10.0
+ruff==0.7.1
+mypy==1.12.1

@@ -1,0 +1,122 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+*.pyc
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env
+ENV/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+MANIFEST
+.eggs/
+
+# Node
+node_modules/
+.npm/
+.pnp/
+.pnp.js
+
+# Frontend build outputs
+dist/
+build/
+
+# Data directories (raw and processed data excluded)
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# Artifact directories
+artifacts/models/*
+artifacts/checkpoints/*
+artifacts/experiments/*
+!artifacts/models/.gitkeep
+!artifacts/checkpoints/.gitkeep
+!artifacts/experiments/.gitkeep
+
+# Video files
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.wmv
+*.flv
+*.webm
+
+# Upload/frame caches
+uploads/
+frames/
+
+# Model weights and serialized objects
+*.pth
+*.pt
+*.pkl
+!tests/fixtures/*.pkl
+
+# Secrets and environment
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.p12
+
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.coveragerc
+nosetests.xml
+
+# Logs
+*.log
+logs/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Ruff / Black
+.ruff_cache/
+
+# Alembic (keep migrations, ignore local override)
+# alembic/versions/*.py  # Keep migrations tracked
+
+# SQLite
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.orig
