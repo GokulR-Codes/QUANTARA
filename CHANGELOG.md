@@ -1,5 +1,61 @@
 # Changelog
 
+## Q-CARE v2.0 — Guardian Authentication & Age-Adaptive Assessment (2026-11-09)
+
+### Added — Guardian Authentication System
+- `backend/app/models_auth.py` — 7 new SQLAlchemy ORM models: `Guardian`, `OTPRecord`, `ChildProfile`, `ConsentRecord`, `AssessmentSession`, `AgeModelConfig`, `AuditLog`
+- `backend/app/services/auth_service.py` — Full auth service: Argon2id password hashing, HS256 JWT sessions, OTP generation (SHA-256 hashed, 60s cooldown, 5-attempt limit), login throttling (5 failures → 15-minute lockout), password reset flow
+- `backend/app/core/security.py` — FastAPI JWT dependencies: `get_current_guardian`, `get_current_verified_guardian`, `get_current_admin`
+- `backend/app/api/v1/auth.py` — Auth router: register, login, logout, verify-otp, resend-otp, forgot-password, reset-password, get-me
+- `backend/app/api/v1/children.py` — Child profiles CRUD with guardian isolation, mandatory age group validation, DoB conflict detection
+- `backend/app/api/v1/assessments.py` — Assessment sessions linking child + job + age_group (recorded at assessment time)
+- `backend/app/api/v1/age_models.py` — Age model status endpoint: 3 groups with processing config
+- `src/models/age_profiles.py` — Age-specific QAOA/VQC/normalization/threshold configs per group (5–7, 7–10, 10–12)
+- `src/models/age_model_loader.py` — Age-aware model loader (never substitutes across age groups)
+- `scripts/create_admin.py` — CLI script for first admin account creation (idempotent)
+
+### Added — Frontend (React/TypeScript)
+- `frontend/src/types/auth.ts` — TypeScript types for auth, child profiles, assessments, age models
+- `frontend/src/api/authClient.ts` — Auth API client with token management (localStorage)
+- `frontend/src/contexts/AuthContext.tsx` — React auth context + `useAuth()` hook
+- `frontend/src/components/ProtectedRoute.tsx` — Route guard (redirects to /auth)
+- `frontend/src/pages/AuthPage.tsx` — Login, Register, ForgotPassword, VerifyEmail forms
+- `frontend/src/pages/GuardianDashboard.tsx` — Post-login dashboard: child cards, model status, assessments
+- `frontend/src/pages/ChildProfilePage.tsx` — Create/view/edit/delete child profiles with consent checkboxes
+- `frontend/src/pages/PrivacyPage.tsx` — Full privacy & consent policy
+- `frontend/src/pages/AgeModelsPage.tsx` — Age-specific model status page at `/age-models`
+- `frontend/src/App.tsx` — Rewritten with `AuthProvider`, `AuthenticatedLayout`, protected routes
+
+### Added — Tests
+- `tests/integration/test_auth_children.py` — 35 integration tests covering registration, login, child profiles, age group validation, assessment sessions, OTP flow, guardian isolation
+
+### Fixed
+- **Password verification argument order** (`auth_service.py`): `argon2_hasher.verify(hashed, plain)` → `argon2_hasher.verify(plain, hashed)`. The passlib argon2 API takes `(secret, hash)` — the reversed arguments silently returned `False` for every password, making login impossible.
+- **Test fixture**: `test_auth_children.py` `client` fixture took non-existent `app` parameter — removed; now uses the session-scoped `client` from `conftest.py`.
+- **PytestReturnNotNoneWarning**: removed stray `return body` from `test_create_child_success`.
+
+### Changed
+- Backend title: "Q-CARE — Quantum-Centric AI for Child Behavioural Risk Evaluation"
+- Camera/Upload pages now accept `?child=<childId>` query param and auto-link assessment sessions after upload
+- Results page shows assessment context banner with child name and age group
+- `.env.example` updated with auth/SMTP/age-model configuration variables
+- `PROJECT_STATUS.md` updated with v2.0 results (244 tests, 99 modules, 32 requirements)
+- 10 new DB tables (additive; existing 3 tables untouched)
+- 47+ API routes (up from ~35)
+
+### Database
+- New tables: `guardians`, `otp_records`, `child_profiles`, `consent_records`, `assessment_sessions`, `age_model_configs`, `audit_logs`
+- Existing tables (`jobs`, `experiments`, `model_registry`) unchanged
+
+### Security
+- Passwords: Argon2id (never plaintext, never logged)
+- Sessions: HS256 JWT with configurable expiry
+- OTPs: SHA-256 hashed, rate-limited, time-limited; dev mode prints to terminal only
+- Login throttling: 5 failed attempts → 15-minute lockout
+- Guardian isolation: children and assessments scoped per guardian
+
+---
+
 ## Integration & repair sprint (2026-10-26)
 
 ### Fixed — defects found in the uploaded code (all verified by execution)

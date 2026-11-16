@@ -1,7 +1,10 @@
-import { useState, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useCamera } from '../hooks/useCamera';
 import { apiErrorMessage, uploadVideo } from '../api/client';
+import { getChild, createAssessment } from '../api/authClient';
+import { useAuth } from '../contexts/AuthContext';
+import type { ChildProfile } from '../types/auth';
 
 function formatTime(s: number) {
   const m = Math.floor(s / 60);
@@ -11,6 +14,13 @@ function formatTime(s: number) {
 
 export default function CameraPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { isAuthenticated } = useAuth();
+  const childId = searchParams.get('child');
+
+  const [selectedChild, setSelectedChild] = useState<ChildProfile | null>(null);
+  const [childError, setChildError] = useState<string | null>(null);
+
   const {
     state, videoRef, previewUrl, elapsedSeconds, error,
     startCamera, stopCamera, startRecording, stopRecording, retake, getVideoFile,
@@ -21,6 +31,14 @@ export default function CameraPage() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const previewVideoRef = useRef<HTMLVideoElement | null>(null);
 
+  // Load child profile when ?child=<id> is provided
+  useEffect(() => {
+    if (!childId || !isAuthenticated) return;
+    getChild(childId)
+      .then(setSelectedChild)
+      .catch(() => setChildError('Could not load child profile. The session may have changed.'));
+  }, [childId, isAuthenticated]);
+
   const handleSaveAndSelect = useCallback(async () => {
     const file = getVideoFile('camera_recording.webm');
     if (!file) return;
@@ -28,13 +46,21 @@ export default function CameraPage() {
     setUploadError(null);
     try {
       const up = await uploadVideo(file, pct => setUploadProgress(pct));
-      navigate(`/select/${up.job_id}`);          // the operator must select the participant first
+      // If a child profile is selected, create an assessment session linking job + child
+      if (selectedChild) {
+        try {
+          await createAssessment(selectedChild.id, up.job_id);
+        } catch {
+          // Assessment link failure is non-fatal — job still navigates correctly
+        }
+      }
+      navigate(`/select/${up.job_id}`);          // operator selects participant
     } catch (err: unknown) {
       setUploadError(apiErrorMessage(err, 'Upload failed'));
     } finally {
       setUploading(false);
     }
-  }, [getVideoFile, navigate]);
+  }, [getVideoFile, navigate, selectedChild]);
 
   const isIdle = state === 'idle';
   const isRequesting = state === 'requesting';
@@ -49,12 +75,35 @@ export default function CameraPage() {
         Record a video for processing. The camera will not start until you explicitly press "Start Camera".
       </p>
 
+      {/* Child profile banner */}
+      {selectedChild && (
+        <div className="alert alert-info" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <span style={{ fontSize: '1.5rem' }}>👶</span>
+          <div>
+            <strong>Assessment for: {selectedChild.display_name}</strong>
+            <span className="badge badge-blue" style={{ marginLeft: '0.5rem' }}>
+              {selectedChild.age_group_label}
+            </span>
+            <div className="text-sm text-muted mt-1">
+              Age-specific model ({selectedChild.age_group}) will be used for inference.
+            </div>
+          </div>
+        </div>
+      )}
+      {childError && <div className="alert alert-warning">{childError}</div>}
+      {!selectedChild && !childError && (
+        <div className="alert alert-warning">
+          <strong>No child profile selected.</strong>{' '}
+          Assessment will not be linked to a profile. To link, start from the{' '}
+          <a href="/guardian">guardian dashboard</a> and select a child.
+        </div>
+      )}
+
       <div className="alert alert-info">
         <strong>Privacy Notice:</strong> This application processes video locally.
         No video is sent externally. Recording requires your explicit consent each session.
         A visible indicator will show when recording is active.
       </div>
-
       {error && <div className="alert alert-error">{error}</div>}
       {uploadError && <div className="alert alert-error">{uploadError}</div>}
 

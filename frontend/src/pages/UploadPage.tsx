@@ -1,9 +1,19 @@
-import { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useCallback, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { apiErrorMessage, uploadVideo } from '../api/client';
+import { getChild, createAssessment } from '../api/authClient';
+import { useAuth } from '../contexts/AuthContext';
+import type { ChildProfile } from '../types/auth';
 
 export default function UploadPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { isAuthenticated } = useAuth();
+  const childId = searchParams.get('child');
+
+  const [selectedChild, setSelectedChild] = useState<ChildProfile | null>(null);
+  const [childError, setChildError] = useState<string | null>(null);
+
   const [file, setFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -12,6 +22,14 @@ export default function UploadPage() {
 
   const ACCEPTED = '.mp4,.avi,.mov,.mkv,.webm';
   const MAX_SIZE_MB = 500;
+
+  // Load child profile when ?child=<id> is provided
+  useEffect(() => {
+    if (!childId || !isAuthenticated) return;
+    getChild(childId)
+      .then(setSelectedChild)
+      .catch(() => setChildError('Could not load child profile.'));
+  }, [childId, isAuthenticated]);
 
   const handleFile = (f: File) => {
     const ext = f.name.split('.').pop()?.toLowerCase() ?? '';
@@ -40,7 +58,15 @@ export default function UploadPage() {
     setError(null);
     try {
       const up = await uploadVideo(file, pct => setProgress(pct));
-      navigate(`/select/${up.job_id}`);          // the operator must select the participant first
+      // If a child profile is selected, link job to assessment session
+      if (selectedChild) {
+        try {
+          await createAssessment(selectedChild.id, up.job_id);
+        } catch {
+          // non-fatal
+        }
+      }
+      navigate(`/select/${up.job_id}`);          // operator selects participant
     } catch (err: unknown) {
       setError(apiErrorMessage(err, 'Upload failed'));
     } finally {
@@ -52,6 +78,30 @@ export default function UploadPage() {
     <div>
       <h1 className="page-title">Upload Video</h1>
       <p className="page-subtitle">Upload a pre-recorded video for processing. Accepted: {ACCEPTED}. Max {MAX_SIZE_MB} MB.</p>
+
+      {/* Child profile banner */}
+      {selectedChild && (
+        <div className="alert alert-info" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <span style={{ fontSize: '1.5rem' }}>👶</span>
+          <div>
+            <strong>Assessment for: {selectedChild.display_name}</strong>
+            <span className="badge badge-blue" style={{ marginLeft: '0.5rem' }}>
+              {selectedChild.age_group_label}
+            </span>
+            <div className="text-sm text-muted mt-1">
+              Age-specific model ({selectedChild.age_group}) will be used for inference.
+            </div>
+          </div>
+        </div>
+      )}
+      {childError && <div className="alert alert-warning">{childError}</div>}
+      {!selectedChild && !childError && (
+        <div className="alert alert-warning">
+          <strong>No child profile selected.</strong>{' '}
+          Assessment will not be linked to a profile. To link, start from the{' '}
+          <a href="/guardian">guardian dashboard</a> and select a child.
+        </div>
+      )}
 
       {error && <div className="alert alert-error">{error}</div>}
 

@@ -1,8 +1,12 @@
 import { Link, useParams } from 'react-router-dom';
 import { useJob } from '../hooks/useJob';
 import { apiErrorMessage, requestPrediction, cancelJob } from '../api/client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { JobStatus } from '../types';
+import { findAssessmentByJob } from '../api/authClient';
+import { useAuth } from '../contexts/AuthContext';
+import type { AssessmentSession } from '../types/auth';
+import { AGE_GROUP_LABELS } from '../types/auth';
 
 const STATUS_LABELS: Record<JobStatus, string> = {
   uploaded: 'Uploaded',
@@ -38,6 +42,14 @@ export default function ResultsPage() {
   const [predicting, setPredicting] = useState(false);
   const [predictError, setPredictError] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
+  const { isAuthenticated } = useAuth();
+  const [assessment, setAssessment] = useState<AssessmentSession | undefined>(undefined);
+
+  // Attempt to look up the linked assessment session for this job
+  useEffect(() => {
+    if (!jobId || !isAuthenticated) return;
+    findAssessmentByJob(jobId).then(setAssessment).catch(() => {/* silent — not all jobs have assessments */});
+  }, [jobId, isAuthenticated]);
 
   const handlePredict = async () => {
     if (!jobId) return;
@@ -82,6 +94,39 @@ export default function ResultsPage() {
 
       {job && (
         <>
+          {/* Assessment / Child profile context banner */}
+          {assessment && (
+            <div className="card" style={{ borderLeft: '3px solid #4f46e5' }}>
+              <div className="card-title">Assessment Context</div>
+              <table>
+                <tbody>
+                  {assessment.child_name && (
+                    <tr>
+                      <td className="text-muted">Child</td>
+                      <td><strong>{assessment.child_name}</strong></td>
+                    </tr>
+                  )}
+                  <tr>
+                    <td className="text-muted">Age-Specific Model</td>
+                    <td>
+                      <span className="badge badge-blue">
+                        {AGE_GROUP_LABELS[assessment.age_group] ?? assessment.age_group}
+                      </span>
+                      <span className="text-muted text-sm" style={{ marginLeft: '0.5rem' }}>
+                        (recorded at assessment time)
+                      </span>
+                    </td>
+                  </tr>
+                  {assessment.notes && (
+                    <tr>
+                      <td className="text-muted">Notes</td>
+                      <td>{assessment.notes}</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
           {/* Status */}
           <div className="card">
             <div className="flex items-center justify-between">

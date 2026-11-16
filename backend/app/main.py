@@ -27,12 +27,12 @@ async def lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="Quantum-Centric Federated Learning API",
+        title="Q-CARE — Quantum-Centric AI for Child Behavioural Risk Evaluation",
         description=(
-            "Experimental research prototype for screen-time behavioural risk assessment. "
-            "NOT a validated clinical tool. All predictions are experimental."
+            "Guardian-authenticated, age-adaptive behavioural risk assessment platform for children aged 5–12. "
+            "Experimental research prototype — NOT a validated clinical tool. All predictions are experimental."
         ),
-        version="1.0.0",
+        version="2.0.0",
         lifespan=lifespan,
         docs_url="/api/docs",
         redoc_url="/api/redoc",
@@ -80,6 +80,11 @@ def create_app() -> FastAPI:
     from backend.app.api.v1.datasets import router as datasets_router
     from backend.app.api.v1.models_registry import router as models_router
     from backend.app.api.v1.models_registry import federated_router
+    # Q-CARE upgrade routers
+    from backend.app.api.v1.auth import router as auth_router
+    from backend.app.api.v1.children import router as children_router
+    from backend.app.api.v1.assessments import router as assessments_router
+    from backend.app.api.v1.age_models import router as age_models_router
 
     app.include_router(health_router)
     app.include_router(videos_router)
@@ -88,6 +93,10 @@ def create_app() -> FastAPI:
     app.include_router(datasets_router)
     app.include_router(models_router)
     app.include_router(federated_router)
+    app.include_router(auth_router)
+    app.include_router(children_router)
+    app.include_router(assessments_router)
+    app.include_router(age_models_router)
 
     @app.get("/", include_in_schema=False)
     async def root():

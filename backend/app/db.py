@@ -73,6 +73,7 @@ def _add_missing_columns() -> list[str]:
 def init_db() -> None:
     """Create all tables and add columns introduced since the DB file was created."""
     from backend.app import models  # noqa: F401 — import to register tables
+    from backend.app import models_auth  # noqa: F401 — import to register auth tables
     Base.metadata.create_all(bind=engine)
     added = _add_missing_columns()
     if added:
